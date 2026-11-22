@@ -1,0 +1,71 @@
+{
+  "_comment": "Profile Configuration for GitHub Stats SVG Card. Edit your values below.",
+  "_instructions": "Keep values within the max_chars limit shown in the ruler to prevent text collision or overflow.",
+  "profile": {
+    "os": {
+      "value": "Windows 11",
+      "max_chars": 51,
+      "ruler": "###################################################"
+    },
+    "host": {
+      "value": "127.0.Meerut.1",
+      "max_chars": 49,
+      "ruler": "#################################################"
+    },
+    "kernel": {
+      "value": "AI/ML Engineer, Computer Vision",
+      "max_chars": 47,
+      "ruler": "###############################################"
+    },
+    "ide": {
+      "value": "VS Code, Jupyter, Google Colab",
+      "max_chars": 50,
+      "ruler": "##################################################"
+    },
+    "languages_programming": {
+      "value": "Python, R, SQL",
+      "max_chars": 32,
+      "ruler": "################################"
+    },
+    "languages_ml": {
+      "value": "TensorFlow, PyTorch, Scikit-learn",
+      "max_chars": 41,
+      "ruler": "#########################################"
+    },
+    "languages_computer": {
+      "value": "LangChain, HuggingFace, FastAPI",
+      "max_chars": 35,
+      "ruler": "###################################"
+    },
+    "creator_of": {
+      "value": "Real-vs-Fake Detector, Deep-Chest, RAG App",
+      "max_chars": 43,
+      "ruler": "###########################################"
+    },
+    "hobbies_software": {
+      "value": "Deep Learning, GenAI, LLMs",
+      "max_chars": 37,
+      "ruler": "#####################################"
+    },
+    "hobbies_hardware": {
+      "value": "XR, Unity, Meta Quest 3",
+      "max_chars": 37,
+      "ruler": "#####################################"
+    },
+    "email_personal": {
+      "value": "aman.iimtuniversity@gmail.com",
+      "max_chars": 39,
+      "ruler": "#######################################"
+    },
+    "portfolio": {
+      "value": "amanraghav.vercel.app",
+      "max_chars": 46,
+      "ruler": "##############################################"
+    },
+    "linkedin": {
+      "value": "aman-raghav-0a1a19289",
+      "max_chars": 45,
+      "ruler": "#############################################"
+    }
+  }
+}

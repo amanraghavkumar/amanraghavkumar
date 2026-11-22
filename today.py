@@ -1,0 +1,589 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+import sys
+import time
+from datetime import date, datetime
+from pathlib import Path
+from typing import Optional
+
+import requests
+from dateutil.relativedelta import relativedelta
+from lxml import etree
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Configuration
+# ──────────────────────────────────────────────────────────────────────────────
+
+ACCESS_TOKEN: str = os.environ["ACCESS_TOKEN"]
+USER_NAME: str    = os.environ.get("USER_NAME", "amanraghavkumar")
+
+# Date of birth, used to compute the live "Uptime" field.
+# Set this via a repo secret (BIRTH_DATE, format YYYY-MM-DD) instead of
+# hardcoding it here — this file is public, a secret is not.
+_BIRTH_DATE_RAW: str = os.environ.get("BIRTH_DATE", "2004-01-01")
+try:
+    BIRTH_DATE: date = datetime.strptime(_BIRTH_DATE_RAW, "%Y-%m-%d").date()
+except ValueError:
+    print(f"  [config] BIRTH_DATE='{_BIRTH_DATE_RAW}' is not YYYY-MM-DD, falling back to 2004-01-01")
+    BIRTH_DATE = date(2004, 1, 1)
+
+GITHUB_API_URL = "https://api.github.com/graphql"
+HEADERS = {
+    "Authorization": f"bearer {ACCESS_TOKEN}",
+    "Content-Type":  "application/json",
+}
+
+# Known email addresses for this account
+KNOWN_EMAILS: set[str] = {
+    "aman.iimtuniversity@gmail.com",
+}
+
+# STRICT NAME FRAGMENTS - Prevents claiming other "Ahmad" or "Hassan"s
+KNOWN_NAME_FRAGMENTS: list[str] = [
+    "aman raghav",
+    "amanraghav",
+    "amanraghavkumar",
+    "aman-raghav",
+]
+
+# Repositories per page (GraphQL max is 100)
+REPOS_PER_PAGE   = 60
+# Commits per page  (keep low to avoid 502s on large repos)
+COMMITS_PER_PAGE = 50
+# Retry settings
+MAX_RETRIES      = 4
+RETRY_SLEEP_S    = 5
+
+# SVG element IDs we need to update
+SVG_ELEMENT_IDS = {
+    "loc_data":     None,   # filled at runtime
+    "loc_add":      None,
+    "loc_del":      None,
+    # dots are cosmetic spacers — we regenerate them too
+    "loc_data_dots": None,
+}
+
+SVG_FILES = ["dark_mode.svg", "light_mode.svg"]
+
+CACHE_DIR = Path("cache")
+CACHE_FILE = CACHE_DIR / f"{hashlib.md5(USER_NAME.encode()).hexdigest()}.txt"
+
+CONFIG_FILE = Path("profile_config.json")
+
+# Configurable profile fields: (json_key, display_key, data_element_id, dots_element_id)
+# Formula: total line width is strictly 60 chars.
+# target_dots_len = 55 - len(display_key)
+# max_chars = target_dots_len - 2 (guarantees at least 2 dots: ' .. ')
+PROFILE_FIELDS = [
+    ("os",                    "OS",                    "os_data",         "os_dots"),
+    ("host",                  "Host",                  "host_data",       "host_dots"),
+    ("kernel",                "Kernel",                "kernel_data",     "kernel_dots"),
+    ("ide",                   "IDE",                   "ide_data",        "ide_dots"),
+    ("languages_programming", "Languages.Programming", "lang_prog_data",  "lang_prog_dots"),
+    ("languages_ml",          "Languages.ML",          "lang_ml_data",    "lang_ml_dots"),
+    ("languages_computer",    "Languages.Computer",    "lang_comp_data",  "lang_comp_dots"),
+    ("creator_of",            "Creator.Of",            "creator_data",    "creator_dots"),
+    ("hobbies_software",      "Hobbies.Software",      "hobby_soft_data", "hobby_soft_dots"),
+    ("hobbies_hardware",      "Hobbies.Hardware",      "hobby_hard_data", "hobby_hard_dots"),
+    ("email_personal",        "Email.Personal",        "email_data",      "email_dots"),
+    ("portfolio",             "Portfolio",             "behance_data",    "behance_dots"),
+    ("linkedin",              "LinkedIn",              "linkedin_data",   "linkedin_dots"),
+]
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GraphQL queries
+# ──────────────────────────────────────────────────────────────────────────────
+
+VIEWER_ID_QUERY = """
+query {
+  viewer {
+    id
+    login
+    followers {
+      totalCount
+    }
+  }
+}
+"""
+
+REPOS_QUERY = """
+query($after: String) {
+  viewer {
+    repositories(
+      first: 60
+      after: $after
+      ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]
+      orderBy: {field: PUSHED_AT, direction: DESC}
+    ) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        nameWithOwner
+        isArchived
+        stargazerCount
+        defaultBranchRef {
+          target {
+            ... on Commit {
+              history(first: 0) {
+                totalCount
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+COMMIT_HISTORY_QUERY = """
+query($owner: String!, $repo: String!, $after: String) {
+  repository(owner: $owner, name: $repo) {
+    defaultBranchRef {
+      target {
+        ... on Commit {
+          history(first: 50, after: $after) {
+            pageInfo { hasNextPage endCursor }
+            nodes {
+              additions
+              deletions
+              author {
+                user { id }
+                email
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# HTTP + retry layer
+# ──────────────────────────────────────────────────────────────────────────────
+
+def graphql_request(query: str, variables: Optional[dict] = None) -> dict:
+    payload = {"query": query, "variables": variables or {}}
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = requests.post(GITHUB_API_URL, json=payload, headers=HEADERS, timeout=60)
+        except requests.RequestException as exc:
+            print(f"  [network] attempt {attempt}/{MAX_RETRIES}: {exc}")
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_SLEEP_S)
+                continue
+            raise
+
+        if resp.status_code == 403:
+            print("  [error] 403 Forbidden / rate-limited. Aborting.")
+            sys.exit(1)
+
+        if resp.status_code in (502, 503, 504):
+            print(f"  [warn]  HTTP {resp.status_code} on attempt {attempt}/{MAX_RETRIES}, retrying in {RETRY_SLEEP_S}s …")
+            time.sleep(RETRY_SLEEP_S)
+            continue
+
+        if resp.status_code != 200:
+            print(f"  [error] Unexpected HTTP {resp.status_code}: {resp.text[:300]}")
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_SLEEP_S)
+                continue
+            resp.raise_for_status()
+
+        data = resp.json()
+        if "errors" in data:
+            print(f"  [graphql errors] {data['errors']}")
+        return data
+
+    raise RuntimeError(f"All {MAX_RETRIES} attempts failed for query.")
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Author-matching helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+def is_my_commit(commit_author: dict, my_node_id: str) -> bool:
+    user_node = (commit_author.get("user") or {})
+    node_id   = user_node.get("id")
+    if node_id and node_id == my_node_id:
+        return True
+
+    raw_email = (commit_author.get("email") or "").strip().lower()
+    if raw_email and raw_email in KNOWN_EMAILS:
+        return True
+
+    raw_name = (commit_author.get("name") or "").strip().lower()
+    if raw_name:
+        for fragment in KNOWN_NAME_FRAGMENTS:
+            if fragment in raw_name:
+                return True
+
+    return False
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Cache helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+def load_cache() -> dict[str, tuple[int, int, int, int]]:
+    cache: dict[str, tuple[int, int, int, int]] = {}
+    if not CACHE_FILE.exists():
+        return cache
+    with CACHE_FILE.open() as fh:
+        for line in fh:
+            parts = line.strip().split()
+            if len(parts) == 5:
+                h, tc, a, d, mc = parts
+                try:
+                    cache[h] = (int(tc), int(a), int(d), int(mc))
+                except ValueError:
+                    pass
+            # old 4-column cache lines (pre-commit-count) are silently
+            # dropped here — that repo just gets re-traversed once and
+            # re-saved in the new 5-column format.
+    return cache
+
+def save_cache(cache: dict[str, tuple[int, int, int, int]]) -> None:
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    with CACHE_FILE.open("w") as fh:
+        for repo_hash, (tc, a, d, mc) in cache.items():
+            fh.write(f"{repo_hash} {tc} {a} {d} {mc}\n")
+
+def repo_hash(name_with_owner: str) -> str:
+    return hashlib.md5(name_with_owner.encode()).hexdigest()
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Core logic
+# ──────────────────────────────────────────────────────────────────────────────
+
+def get_viewer_info() -> tuple[str, int]:
+    data = graphql_request(VIEWER_ID_QUERY)
+    viewer = data["data"]["viewer"]
+    followers = viewer["followers"]["totalCount"]
+    print(f"[auth] Authenticated as: {viewer['login']}  (id: {viewer['id']}, followers: {followers})")
+    return viewer["id"], followers
+
+
+def get_uptime_str(birth: date) -> str:
+    """Live 'years, months, days' string from BIRTH_DATE to today — recomputed on every run."""
+    today = date.today()
+    delta = relativedelta(today, birth)
+    parts = [
+        f"{delta.years} year{'s' if delta.years != 1 else ''}",
+        f"{delta.months} month{'s' if delta.months != 1 else ''}",
+        f"{delta.days} day{'s' if delta.days != 1 else ''}",
+    ]
+    return ", ".join(parts)
+
+
+def fetch_all_repos() -> list[dict]:
+    repos: list[dict] = []
+    cursor: Optional[str] = None
+    page = 0
+    while True:
+        page += 1
+        print(f"  Fetching repo page {page} …")
+        data = graphql_request(REPOS_QUERY, {"after": cursor})
+        repo_data = data["data"]["viewer"]["repositories"]
+        nodes     = repo_data["nodes"]
+        repos.extend(nodes)
+        page_info = repo_data["pageInfo"]
+        if not page_info["hasNextPage"]:
+            break
+        cursor = page_info["endCursor"]
+    print(f"  Total repositories found: {len(repos)}")
+    return repos
+
+
+def traverse_repo_loc(owner: str, repo_name: str, my_node_id: str) -> tuple[int, int, int]:
+    added, deleted, matched_commits = 0, 0, 0
+    cursor: Optional[str] = None
+    while True:
+        data = graphql_request(
+            COMMIT_HISTORY_QUERY,
+            {"owner": owner, "repo": repo_name, "after": cursor},
+        )
+        repo_obj = (data.get("data") or {}).get("repository")
+        if not repo_obj:
+            break
+        default_branch = repo_obj.get("defaultBranchRef")
+        if not default_branch:
+            break
+        history = default_branch["target"]["history"]
+        for node in history["nodes"]:
+            author = node.get("author") or {}
+            if is_my_commit(author, my_node_id):
+                added   += node.get("additions", 0)
+                deleted += node.get("deletions", 0)
+                matched_commits += 1
+        page_info = history["pageInfo"]
+        if not page_info["hasNextPage"]:
+            break
+        cursor = page_info["endCursor"]
+    return added, deleted, matched_commits
+
+
+def calculate_loc(my_node_id: str) -> tuple[int, int, int, int, int, int]:
+    cache = load_cache()
+    all_repos = fetch_all_repos()
+
+    total_added       = 0
+    total_deleted     = 0
+    total_stars       = 0
+    contributed_repos = 0
+    total_commits     = 0
+
+    for idx, repo in enumerate(all_repos, 1):
+        name_with_owner: str = repo["nameWithOwner"]
+        rh = repo_hash(name_with_owner)
+
+        # --- NEW STATS CALCULATION ---
+        stars_on_this_repo = repo.get("stargazerCount", 0)
+        total_stars += stars_on_this_repo
+        
+        owner = name_with_owner.split("/")[0]
+        if owner.lower() != USER_NAME.lower():
+            contributed_repos += 1
+
+        if stars_on_this_repo > 0:
+            print(f"  [*] Star Tracker: {name_with_owner} has {stars_on_this_repo} stars.")
+        # -----------------------------
+
+        default_branch_ref = repo.get("defaultBranchRef")
+        if not default_branch_ref:
+            print(f"  [{idx}/{len(all_repos)}] {name_with_owner} — no default branch, skipping")
+            continue
+
+        try:
+            api_total_commits: int = default_branch_ref["target"]["history"]["totalCount"]
+        except (KeyError, TypeError):
+            print(f"  [{idx}/{len(all_repos)}] {name_with_owner} — cannot read commit count, skipping")
+            continue
+
+        # ── Cache hit? ────────────────────────────────────────────────────────
+        if rh in cache:
+            cached_tc, cached_add, cached_del, cached_mc = cache[rh]
+            
+            # AUTO-HEAL THE POISONED CACHE
+            # If the cache contains the bug (more deletions than additions), ignore it
+            # and force the script to rescan with the Strict Name matching!
+            if cached_tc == api_total_commits and cached_del <= cached_add:
+                print(
+                    f"  [{idx}/{len(all_repos)}] {name_with_owner} — "
+                    f"cache hit ({api_total_commits} commits), "
+                    f"+{cached_add} / -{cached_del}, mine={cached_mc}"
+                )
+                total_added   += cached_add
+                total_deleted += cached_del
+                total_commits += cached_mc
+                continue
+
+        # ── Cache miss / stale — traverse history ────────────────────────────
+        print(
+            f"  [{idx}/{len(all_repos)}] {name_with_owner} — "
+            f"traversing {api_total_commits} commits …"
+        )
+        try:
+            owner, repo_name = name_with_owner.split("/", 1)
+            add, dele, mc = traverse_repo_loc(owner, repo_name, my_node_id)
+        except Exception as exc:
+            print(f"    [error] Failed to traverse {name_with_owner}: {exc}, skipping")
+            continue
+
+        # THE LEGIT MATH CAP
+        # You cannot be penalized for deleting 3rd party code you didn't write.
+        # This keeps your history completely legitimate and your net LOC positive.
+        if dele > add:
+            dele = add
+
+        print(f"    → +{add} / -{dele}, mine={mc} commits")
+        cache[rh] = (api_total_commits, add, dele, mc)
+        total_added   += add
+        total_deleted += dele
+        total_commits += mc
+
+    save_cache(cache)
+    return total_added, total_deleted, len(all_repos), contributed_repos, total_stars, total_commits
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SVG patching
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _dots(target_len: int, current_text_len: int) -> str:
+    n = target_len - current_text_len
+    return " " + "." * max(0, n) + " "
+
+def format_number(n: int) -> str:
+    abs_n = abs(n)
+    if abs_n >= 1_000_000:
+        return f"{n / 1_000_000:.2f}M"  
+    elif abs_n >= 100_000:
+        return f"{n / 1_000:.0f}K"
+    elif abs_n >= 1_000:
+        return f"{n / 1_000:.1f}K"
+    return f"{n:,}"
+
+
+def load_profile_config() -> dict[str, tuple[str, str, str, str]]:
+    """Loads profile_config.json, validates length limits, displays a character ruler,
+    and returns a mapping: field_key -> (data_id, dots_id, value, dots_str)."""
+    if not CONFIG_FILE.exists():
+        print(f"  [config] {CONFIG_FILE} not found, using SVG template defaults")
+        return {}
+
+    with CONFIG_FILE.open(encoding="utf-8") as fh:
+        raw_data = json.load(fh)
+
+    profile_data = raw_data.get("profile", raw_data)
+    result: dict[str, tuple[str, str, str, str]] = {}
+
+    print("\n" + "=" * 78)
+    print("Profile Configuration & Character Length Limits (Collision Prevention)")
+    print("=" * 78)
+    print(f"{'Field':<24} {'Len':>3}/{'Max':<3} {'Dots':>4}  {'Character Limit Ruler (#####)'}")
+    print("-" * 78)
+
+    for field_key, display_key, data_id, dots_id in PROFILE_FIELDS:
+        item = profile_data.get(field_key, "")
+        val = item.get("value", "") if isinstance(item, dict) else str(item)
+        val = val.strip()
+
+        target_dots_len = 55 - len(display_key)
+        max_chars = target_dots_len - 2
+
+        val_len = len(val)
+        status = ""
+        if val_len > max_chars:
+            status = f" -> OVERFLOW! (exceeds limit by {val_len - max_chars})"
+            print(f"  [warning] '{field_key}' is {val_len - max_chars} chars too long! Clamped to prevent SVG overflow.")
+            val = val[:max_chars]
+            val_len = max_chars
+
+        dots_str = _dots(target_dots_len, val_len)
+        dot_count = max(0, target_dots_len - val_len)
+        ruler = "#" * max_chars
+        print(f"{field_key:<24} {val_len:>3}/{max_chars:<3} {dot_count:>4}  {ruler}{status}")
+
+        result[field_key] = (data_id, dots_id, val, dots_str)
+
+    print("=" * 78)
+    return result
+
+
+def patch_svg(filepath: str, added: int, deleted: int, net: int, total_repos: int, contributed_repos: int, total_stars: int, uptime_str: str, followers: int, total_commits: int, profile_fields: Optional[dict] = None) -> None:
+    path = Path(filepath)
+    if not path.exists():
+        print(f"  [svg] {filepath} not found, skipping")
+        return
+
+    parser = etree.XMLParser(remove_blank_text=False)
+    tree   = etree.parse(str(path), parser)
+    root   = tree.getroot()
+
+    id_map: dict[str, etree._Element] = {}
+    for el in root.iter():
+        el_id = el.get("id")
+        if el_id:
+            id_map[el_id] = el
+
+    def set_text(el_id: str, text: str) -> None:
+        el = id_map.get(el_id)
+        if el is not None:
+            el.text = text
+        else:
+            print(f"  [svg] warning: element #{el_id} not found in {filepath}")
+
+    # --- STATIC/CONFIGURABLE PROFILE FIELDS FROM JSON ---
+    if profile_fields is None:
+        profile_fields = load_profile_config()
+
+    for field_key, (data_id, dots_id, val, dots_str) in profile_fields.items():
+        if val:
+            set_text(data_id, val)
+            set_text(dots_id, dots_str)
+
+    # --- DYNAMIC GITHUB STATS ---
+    net_str  = format_number(net)
+    add_str  = format_number(added)
+    del_str  = format_number(deleted)
+
+    set_text("loc_data",      net_str)
+    set_text("loc_add",       add_str)
+    set_text("loc_del",       del_str)
+
+    set_text("repo_data", str(total_repos))
+    set_text("contrib_data", str(contributed_repos))
+    set_text("star_data", str(total_stars))
+
+    set_text("age_data", uptime_str)
+    set_text("follower_data", str(followers))
+    set_text("commit_data", str(total_commits))
+
+    # --- DYNAMIC DOT CALCULATION ---
+    dynamic_text_len = len(net_str) + len(add_str) + len(del_str)
+    static_svg_chars_len = 13 
+    TARGET_TOTAL_LEN = 33
+    current_text_len = dynamic_text_len + static_svg_chars_len
+    set_text("loc_data_dots", _dots(TARGET_TOTAL_LEN, current_text_len))
+
+    if "loc_del_dots" in id_map:
+        set_text("loc_del_dots", " ")
+
+    dynamic_repo_text = f"{total_repos} {{Contributed: {contributed_repos}}}"
+    set_text("repo_data_dots", _dots(25, len(dynamic_repo_text)))
+    set_text("star_data_dots", _dots(14, len(str(total_stars))))
+
+    # age_data_dots / follower_data_dots: target lengths reproduce the original
+    # template's line width (dots + value) so things stay visually aligned
+    # however long the uptime string or follower count get.
+    set_text("age_data_dots", _dots(49, len(uptime_str)))
+    set_text("follower_data_dots", _dots(10, len(str(followers))))
+    set_text("commit_data_dots", _dots(23, len(str(total_commits))))
+
+    tree.write(str(path), xml_declaration=True, encoding="UTF-8", pretty_print=False)
+    with open(path, "ab") as f:
+        f.write(b"\n")
+    print(f"  [svg] patched {filepath}  net={net_str} +{add_str} -{del_str}  uptime={uptime_str}  followers={followers}  commits={total_commits}")
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Entry point
+# ──────────────────────────────────────────────────────────────────────────────
+
+def main() -> None:
+    print("=" * 60)
+    print("GitHub LOC Stats Updater")
+    print("=" * 60)
+
+    my_node_id, followers = get_viewer_info()
+    uptime_str = get_uptime_str(BIRTH_DATE)
+
+    print("\n[loc] Calculating Lines of Code & Stats …")
+    total_added, total_deleted, total_repos, contributed_repos, total_stars, total_commits = calculate_loc(my_node_id)
+    net_loc = total_added - total_deleted
+
+    print("\n" + "=" * 60)
+    print(f"  Total Repos   : {total_repos}")
+    print(f"  Contributed   : {contributed_repos}")
+    print(f"  Total Stars   : {total_stars}")
+    print(f"  Total Commits : {total_commits}")
+    print(f"  Followers     : {followers}")
+    print(f"  Uptime        : {uptime_str}")
+    print(f"  Lines added   : {format_number(total_added)}")
+    print(f"  Lines deleted : {format_number(total_deleted)}")
+    print(f"  Net LOC       : {format_number(net_loc)}")
+    print("=" * 60)
+
+    profile_fields = load_profile_config()
+
+    print("\n[svg] Updating SVG files …")
+    for svg_file in SVG_FILES:
+        patch_svg(svg_file, total_added, total_deleted, net_loc, total_repos, contributed_repos, total_stars, uptime_str, followers, total_commits, profile_fields)
+
+    print("\n[done] All done.")
+
+if __name__ == "__main__":
+    main()
