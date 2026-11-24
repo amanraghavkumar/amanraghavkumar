@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" font-family="Consolas, monospace" width="985px" height="530px" font-size="16px" xml:space="preserve">
+<style>
+@keyframes k_bg{0.00%{fill:#0d1117}13.33%{fill:#0d1117}16.67%{fill:#ffffff}30.00%{fill:#ffffff}33.33%{fill:#1a1033}46.67%{fill:#1a1033}50.00%{fill:#fff4d6}63.33%{fill:#fff4d6}66.67%{fill:#04140a}80.00%{fill:#04140a}83.33%{fill:#e6f2ff}}
+@keyframes k_lbl{0.00%{fill:#ffa657}13.33%{fill:#ffa657}16.67%{fill:#953800}30.00%{fill:#953800}33.33%{fill:#d2a8ff}46.67%{fill:#d2a8ff}50.00%{fill:#bf3989}63.33%{fill:#bf3989}66.67%{fill:#7ee787}80.00%{fill:#7ee787}83.33%{fill:#cf222e}}
+@keyframes k_val{0.00%{fill:#a5d6ff}13.33%{fill:#a5d6ff}16.67%{fill:#0a3069}30.00%{fill:#0a3069}33.33%{fill:#7ee787}46.67%{fill:#7ee787}50.00%{fill:#0e7490}63.33%{fill:#0e7490}66.67%{fill:#f2cc60}80.00%{fill:#f2cc60}83.33%{fill:#0550ae}}
+@keyframes k_acc{0.00%{fill:#c9d1d9}13.33%{fill:#c9d1d9}16.67%{fill:#24292f}30.00%{fill:#24292f}33.33%{fill:#e2c5ff}46.67%{fill:#e2c5ff}50.00%{fill:#7d4e00}63.33%{fill:#7d4e00}66.67%{fill:#aff5b4}80.00%{fill:#aff5b4}83.33%{fill:#0a3069}}
+@keyframes k_dots{0.00%{fill:#616e7f}13.33%{fill:#616e7f}16.67%{fill:#a0aab5}30.00%{fill:#a0aab5}33.33%{fill:#6b5f8f}46.67%{fill:#6b5f8f}50.00%{fill:#c9b88a}63.33%{fill:#c9b88a}66.67%{fill:#3f6b4f}80.00%{fill:#3f6b4f}83.33%{fill:#9db4cc}}
+@keyframes k_ad{0.00%{opacity:1}13.33%{opacity:1}16.67%{opacity:0}30.00%{opacity:0}33.33%{opacity:1}46.67%{opacity:1}50.00%{opacity:0}63.33%{opacity:0}66.67%{opacity:1}80.00%{opacity:1}83.33%{opacity:0}}
+@keyframes k_al{0.00%{opacity:0}13.33%{opacity:0}16.67%{opacity:1}30.00%{opacity:1}33.33%{opacity:0}46.67%{opacity:0}50.00%{opacity:1}63.33%{opacity:1}66.67%{opacity:0}80.00%{opacity:0}83.33%{opacity:1}}
+.bg{animation:k_bg 30s linear infinite}
+.lbl{animation:k_lbl 30s linear infinite}
+.val{animation:k_val 30s linear infinite}
+.acc{animation:k_acc 30s linear infinite}
+.dots{animation:k_dots 30s linear infinite}
+.acc.ad{animation:k_acc 30s linear infinite,k_ad 30s linear infinite}
+.acc.al{animation:k_acc 30s linear infinite,k_al 30s linear infinite}
+</style><rect width="985px" height="530px" fill="#161b22" rx="15" class="bg"/>
+<text x="10" y="10" fill="#c9d1d9" xml:space="preserve" class="acc ad">
+ 
+  <tspan x="15" dy="1.2em"> .::...:--+#%%%%@@@@@%+##+--=++==-:::.. </tspan>
+  <tspan x="15" dy="1.2em">.::-...:-=+%%@#+=---===+**-=++++=-::::..</tspan>
+  <tspan x="15" dy="1.2em">.:--..::==*%*:...... ...  :=***+=----::.</tspan>
+  <tspan x="15" dy="1.2em">:--=.:::=+*:. ...           .#**+=---:::</tspan>
+  <tspan x="15" dy="1.2em">:-==.::-+= :       .-+##*+:  :**+=----::</tspan>
+  <tspan x="15" dy="1.2em">:===.::==  .  ...-*%%%%%###-   *+=----::</tspan>
+  <tspan x="15" dy="1.2em">-=+=.::+:   .:-+#%%%@@@%###*   ++=--=--:</tspan>
+  <tspan x="15" dy="1.2em">-=+=:::+= .+****#@@@#=-=+++*=  **+-==--:</tspan>
+  <tspan x="15" dy="1.2em">-=+=::-+% .#=+++==%@#===+=*##  %*+-==--:</tspan>
+  <tspan x="15" dy="1.2em">-=+=:--+#=:#*=+=**#@%###%%@%%:*=*=--=--:</tspan>
+  <tspan x="15" dy="1.2em">-=+=:--+#*:%%%%@%#%@%#%@@@@@#=+*+=-#**+=</tspan>
+  <tspan x="15" dy="1.2em">-=+=:--+#+**%@@@%*=++=*%@@@%#-#*=-:-=::.</tspan>
+  <tspan x="15" dy="1.2em">-=====:+#%*=#%%%++=+*+=-=%%#*:#*=-::::..</tspan>
+  <tspan x="15" dy="1.2em">.::*#%-+*#@*-**#=+##*##%##+*+=%*=-:::...</tspan>
+  <tspan x="15" dy="1.2em">...:---+****:--#*##*+#%%##=-:.  .::::...</tspan>
+  <tspan x="15" dy="1.2em">::::--++:    :.-:+*+-===:..:#.     ..=-:</tspan>
+  <tspan x="15" dy="1.2em">:-----=      .#-.. .... .:=**.       ::.</tspan>
+  <tspan x="15" dy="1.2em">..:-==:       ***+=====+=++++:       .. </tspan>
+  <tspan x="15" dy="1.2em"> ..:-:        -*****+#++=+++=-.       . </tspan>
+  <tspan x="15" dy="1.2em">..:::         .=*****+*++++=-.         .</tspan>
+  <tspan x="15" dy="1.2em">               .=+**+++=++==.           </tspan>
+  <tspan x="15" dy="1.2em">                 :+*+==+*=:             </tspan>
+  <tspan x="15" dy="1.2em">                   .----.               </tspan>
+  <tspan x="15" dy="1.2em">                                        </tspan>
+  <tspan x="15" dy="1.2em">                                        </tspan>
+</text>
+<text x="10" y="10" fill="#c9d1d9" xml:space="preserve" class="acc al">
+ 
+  <tspan x="15" dy="1.2em">    ::--::.           -..:=-:....::...  </tspan>
+  <tspan x="15" dy="1.2em">    :---::.   .-=++++=+-::==-:..::::... </tspan>
+  <tspan x="15" dy="1.2em">    ----:-. :+####%%%%##%#*=::::::::....</tspan>
+  <tspan x="15" dy="1.2em">    --=-:::+#%%%%@@@@@@@@%%%*..:::-::...</tspan>
+  <tspan x="15" dy="1.2em">   .--==:=#*%%@@@@@@#+===+#%%*:::---::..</tspan>
+  <tspan x="15" dy="1.2em">   .===--###%@@@@#+-------=#%%#:----::.:</tspan>
+  <tspan x="15" dy="1.2em">   .===-*#%%%%#*=---:::-===+@%%=----::::</tspan>
+  <tspan x="15" dy="1.2em">   .===-=%%=++++=:::=#%#+++=*@%---=-:::.</tspan>
+  <tspan x="15" dy="1.2em">   .===-.%#=**+*#*-:=*#***+=-@@:--=-::::</tspan>
+  <tspan x="15" dy="1.2em">   .==+-.+#-+#**++=:-===-----#=+--=-:-::</tspan>
+  <tspan x="15" dy="1.2em">   :==+-:-#------=-:-=-:::::=*==-==    .</tspan>
+  <tspan x="15" dy="1.2em">.  :===-:==+-:::-=****+--:--=#-==++=--:-</tspan>
+  <tspan x="15" dy="1.2em">. .::-+-:.=*=---**#*++*##--==%--=++===--</tspan>
+  <tspan x="15" dy="1.2em">::-   =-::.=#++=**==+==-==+++*:-=++===--</tspan>
+  <tspan x="15" dy="1.2em">::--:-=::--=###=+==+*=--==*##%@%#++===-:</tspan>
+  <tspan x="15" dy="1.2em">.::---::*%%@@%@#%+++##*#%@@#-#%%%#*+=..:</tspan>
+  <tspan x="15" dy="1.2em">...::-:*#%%%%%-#@@@@@@@@@%*=-#%###*+=:::</tspan>
+  <tspan x="15" dy="1.2em">......=**###%@===+*******+===*%#**+++--:</tspan>
+  <tspan x="15" dy="1.2em">..:::-++**##%#+---===-+++====+***+++==::</tspan>
+  <tspan x="15" dy="1.2em"> ...:==++**###*=----=====-===****++==-:.</tspan>
+  <tspan x="15" dy="1.2em"> .:--==+++***##*=----===--==***+++==--:.</tspan>
+  <tspan x="15" dy="1.2em"> ..:--==++*****#*+-:----:-+***+++==--:..</tspan>
+  <tspan x="15" dy="1.2em">  ..:---==+++*****#+====***++++===--:.. </tspan>
+  <tspan x="15" dy="1.2em">   ..::--===++++++*******++++===--::..  </tspan>
+  <tspan x="15" dy="1.2em">     .::---====++=++++++++====---::.    </tspan>
+</text>
+<text x="390" y="30" fill="#c9d1d9" xml:space="preserve" class="acc">
+<tspan x="390" y="30">amanraghavkumar</tspan> --———————————————————————————————————————-—-
+<tspan x="390" y="50" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">OS</tspan>:<tspan fill="#616e7f" id="os_dots" class="dots"> ........................................... </tspan><tspan fill="#a5d6ff" id="os_data" class="val">Windows 11</tspan>
+<tspan x="390" y="70" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Uptime</tspan>:<tspan fill="#616e7f" id="age_data_dots" class="dots"> ..................... </tspan><tspan fill="#a5d6ff" id="age_data" class="val">22 years, 10 months, 23 days</tspan>
+<tspan x="390" y="90" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Host</tspan>:<tspan fill="#616e7f" id="host_dots" class="dots"> ..................................... </tspan><tspan fill="#a5d6ff" id="host_data" class="val">127.0.Meerut.1</tspan>
+<tspan x="390" y="110" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Kernel</tspan>:<tspan fill="#616e7f" id="kernel_dots" class="dots"> .................. </tspan><tspan fill="#a5d6ff" id="kernel_data" class="val">AI/ML Engineer, Computer Vision</tspan>
+<tspan x="390" y="130" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">IDE</tspan>:<tspan fill="#616e7f" id="ide_dots" class="dots"> ...................... </tspan><tspan fill="#a5d6ff" id="ide_data" class="val">VS Code, Jupyter, Google Colab</tspan>
+<tspan x="390" y="150" fill="#616e7f" class="dots">. </tspan>
+<tspan x="390" y="170" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Languages</tspan>.<tspan fill="#ffa657" class="lbl">Programming</tspan>:<tspan fill="#616e7f" id="lang_prog_dots" class="dots"> .................... </tspan><tspan fill="#a5d6ff" id="lang_prog_data" class="val">Python, R, SQL</tspan>
+<tspan x="390" y="190" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Languages</tspan>.<tspan fill="#ffa657" class="lbl">ML</tspan>:<tspan fill="#616e7f" id="lang_ml_dots" class="dots"> .......... </tspan><tspan fill="#a5d6ff" id="lang_ml_data" class="val">TensorFlow, PyTorch, Scikit-learn</tspan>
+<tspan x="390" y="210" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Languages</tspan>.<tspan fill="#ffa657" class="lbl">Computer</tspan>:<tspan fill="#616e7f" id="lang_comp_dots" class="dots"> ...... </tspan><tspan fill="#a5d6ff" id="lang_comp_data" class="val">LangChain, HuggingFace, FastAPI</tspan>
+<tspan x="390" y="230" fill="#616e7f" class="dots">. </tspan>
+<tspan x="390" y="250" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Creator</tspan>.<tspan fill="#ffa657" class="lbl">Of</tspan>:<tspan fill="#616e7f" id="creator_dots" class="dots"> ... </tspan><tspan fill="#a5d6ff" id="creator_data" class="val">Real-vs-Fake Detector, Deep-Chest, RAG App</tspan>
+<tspan x="390" y="270" fill="#616e7f" class="dots">. </tspan>
+<tspan x="390" y="290" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Hobbies</tspan>.<tspan fill="#ffa657" class="lbl">Software</tspan>:<tspan fill="#616e7f" id="hobby_soft_dots" class="dots"> ............. </tspan><tspan fill="#a5d6ff" id="hobby_soft_data" class="val">Deep Learning, GenAI, LLMs</tspan>
+<tspan x="390" y="310" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Hobbies</tspan>.<tspan fill="#ffa657" class="lbl">Hardware</tspan>:<tspan fill="#616e7f" id="hobby_hard_dots" class="dots"> ................ </tspan><tspan fill="#a5d6ff" id="hobby_hard_data" class="val">XR, Unity, Meta Quest 3</tspan>
+<tspan x="390" y="350">- Contact</tspan> -——————————————————————————————————————————————-—-
+<tspan x="390" y="370" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Email</tspan>.<tspan fill="#ffa657" class="lbl">Personal</tspan>:<tspan fill="#616e7f" id="email_dots" class="dots"> ............ </tspan><tspan fill="#a5d6ff" id="email_data" class="val">aman.iimtuniversity@gmail.com</tspan>
+<tspan x="390" y="390" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Portfolio</tspan>:<tspan fill="#616e7f" id="behance_dots" class="dots"> ......................... </tspan><tspan fill="#a5d6ff" id="behance_data" class="val">amanraghav.vercel.app</tspan>
+<tspan x="390" y="410" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">LinkedIn</tspan>:<tspan fill="#616e7f" id="linkedin_dots" class="dots"> .......................... </tspan><tspan fill="#a5d6ff" id="linkedin_data" class="val">aman-raghav-0a1a19289</tspan>
+<tspan x="390" y="450">- GitHub Stats</tspan> -—————————————————————————————————————————-—-
+<tspan x="390" y="470" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Repos</tspan>:<tspan fill="#616e7f" id="repo_data_dots" class="dots"> ....... </tspan><tspan fill="#a5d6ff" id="repo_data" class="val">0</tspan> {<tspan fill="#ffa657" class="lbl">Contributed</tspan>: <tspan fill="#a5d6ff" id="contrib_data" class="val">0</tspan>} | <tspan fill="#ffa657" class="lbl">Stars</tspan>:<tspan fill="#616e7f" id="star_data_dots" class="dots"> ............. </tspan><tspan fill="#a5d6ff" id="star_data" class="val">0</tspan>
+<tspan x="390" y="490" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Commits</tspan>:<tspan fill="#616e7f" id="commit_data_dots" class="dots"> ...................... </tspan><tspan fill="#a5d6ff" id="commit_data" class="val">0</tspan> | <tspan fill="#ffa657" class="lbl">Followers</tspan>:<tspan fill="#616e7f" id="follower_data_dots" class="dots"> ......... </tspan><tspan fill="#a5d6ff" id="follower_data" class="val">0</tspan>
+<tspan x="390" y="510" fill="#616e7f" class="dots">. </tspan><tspan fill="#ffa657" class="lbl">Lines of Code on GitHub</tspan>:<tspan fill="#616e7f" id="loc_data_dots" class="dots"> ................. </tspan><tspan fill="#a5d6ff" id="loc_data" class="val">0</tspan> ( <tspan fill="#3fb950" id="loc_add">0</tspan><tspan fill="#3fb950">++</tspan>, <tspan id="loc_del_dots"> </tspan><tspan fill="#f85149" id="loc_del">0</tspan><tspan fill="#f85149">--</tspan> )
+</text>
+</svg>
